@@ -1,0 +1,66 @@
+
+#include <iostream>
+#include <string>
+#include <conio.h>
+#include <windows.h>
+
+using namespace std;
+//8 variant
+
+class c_name
+{
+private:
+    string name;
+    int zasel_mest;
+    int vsego_mest;
+    int oplata;
+
+public:
+    c_name(string n, int a, int b, int c)
+    {
+        name = n;
+        zasel_mest = a;
+        vsego_mest = b;
+        oplata = c;
+    };
+    void setname(string n)
+    {
+        name = n;
+    }
+    void setzasel_mest(int a)
+    {
+        if (a > 0)
+        {
+            zasel_mest = a;
+        }
+        else
+        {
+            zasel_mest = 1;
+        }
+    }
+    int count_viruchka()
+    {
+        return zasel_mest * oplata;
+    }
+    string showname()
+    {
+        return name;
+    }
+};
+
+class gostinitsa
+{
+public:
+    gostinitsa(string n, int);
+};
+
+int main()
+{
+    setlocale(LC_ALL, "rus");
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+
+    c_name Club("Club", 5, 15, 10000);
+    cout << Club.count_viruchka();
+    return 0;
+}
