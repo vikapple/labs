@@ -1,0 +1,209 @@
+#include <iostream>
+#include <windows.h>
+#include <vector>
+#include <conio.h>
+#include <memory>
+#include <stdexcept>
+
+class IPriceStrategy { //Базовый интерфейс для реализации стратегии вычисления стоимости номера.
+public:
+    virtual double getPrice(double basePrice) const = 0;
+    virtual ~IPriceStrategy() = default;
+};
+
+class FullPriceStrategy : public IPriceStrategy {  //Реализует интерфейс IPriceStrategy и возвращает полную стоимость номера без скидок.
+public:
+    double getPrice(double basePrice) const override {
+        return basePrice;
+    }
+};
+
+class DiscountPriceStrategy : public IPriceStrategy { //Реализует интерфейс IPriceStrategy и возвращает стоимость номера с учетом скидки.
+private:
+    double discount; // В %
+
+public:
+    explicit DiscountPriceStrategy(double discountPercent)
+        : discount(discountPercent) {
+        if (discount < 0 || discount > 100) {
+            throw std::invalid_argument("Скидка должна быть от 0% до 100%");
+        }
+    }
+
+    double getPrice(double basePrice) const override {
+        return basePrice * (1 - discount / 100.0);
+    }
+};
+
+class Room {
+private:
+    int id;
+    double basePrice;
+    std::unique_ptr<IPriceStrategy> strategy;
+
+public:
+    Room(int roomId, double price, std::unique_ptr<IPriceStrategy> priceStrategy)
+        : id(roomId), basePrice(price), strategy(std::move(priceStrategy)) {
+        if (price < 0) {
+            throw std::invalid_argument("Стоимость номера не может быть отрицательной.");
+        }
+    }
+
+    double getPrice() const {
+        return strategy->getPrice(basePrice);
+    }
+
+    void setStrategy(std::unique_ptr<IPriceStrategy> newStrategy) {
+        strategy = std::move(newStrategy);
+    }
+
+    int getId() const { 
+        return id;
+    }
+};
+
+class Hotel {
+private:
+    //std::vector<Room> rooms;
+    std::vector<std::unique_ptr<Room>> rooms;
+
+
+public:
+    /*void addRoom(const Room& room) {
+        rooms.push_back(room);
+    }*/
+    //void addRoom(const Room& room) {
+    void addRoom(std::unique_ptr<Room> room) {
+        for (const auto& r : rooms) {
+            //if (r.getId() == room.getId()) {
+            if (r->getId() == room->getId()) {
+                throw std::runtime_error("Комната с таким ID уже существует.");
+            }
+        }
+        rooms.push_back(std::move(room));
+    }
+
+    double calculateAverageCost() const { //расчет средней стоимости проживания
+        if (rooms.empty()) {
+            throw std::runtime_error("Нет свободных номеров для расчета средней стоимости.");
+        }
+
+        double totalCost = 0;
+        for (const auto& room : rooms) {
+            totalCost += room->getPrice();
+        }
+
+        return totalCost / rooms.size();
+    }
+};
+
+void addRoomManually(Hotel& hotel) {
+    int id;
+    double price;
+    int strategyChoice;
+
+    std::cout << "Введите № комнаты: ";
+    std::cin >> id;
+
+    std::cout << "Введите стоимость комнаты: ";
+    std::cin >> price;
+    if (price > 250000) {
+        std::cerr << "Ошибка: Стоимость комнаты не может быть больше 250,000 рублей.\n";
+        return;
+    }
+    
+    std::cout << "Выберите стратегию:\n";   
+    std::cout << "1. Полная стоимость\n";
+    std::cout << "2. Скидка\n";
+    std::cin >> strategyChoice;
+
+    std::unique_ptr<IPriceStrategy> strategy;
+    if (strategyChoice == 1) {
+        strategy = std::make_unique<FullPriceStrategy>();
+    }
+    else if (strategyChoice == 2) {
+        double discount;
+        std::cout << "Введите размер скидки в процентах (от 0 до 100): ";
+        std::cin >> discount;
+        strategy = std::make_unique<DiscountPriceStrategy>(discount);
+    }
+    else {
+        std::cerr << "Неверный выбор стратегии. Комната не добавлена.\n";
+        return;
+    }
+
+    try {
+        hotel.addRoom(std::make_unique<Room>(id, price, std::move(strategy)));
+        std::cout << "Комната успешно добавлена.\n";
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Ошибка: " << e.what() << std::endl;
+    }
+}
+
+
+int main() {
+
+    SetConsoleCP(1251);
+    SetConsoleOutputCP(1251);
+
+    try {
+        Hotel hotel;
+
+
+        // Добавляем комнаты с разными стратегиями
+        char choice;
+        do {
+            std::cout << "\nМеню:\n";
+            std::cout << "1. Добавить комнату\n";
+            std::cout << "2. Вычислить среднюю стоимость\n";
+            std::cout << "0. Выйти\n";
+            //std::cout << "Ваш выбор: ";
+            //std::cin >> choice;
+            choice = _getch();
+            std::cout << choice << std::endl;
+
+
+        /*hotel.addRoom(std::make_unique<Room>(1, 100, std::make_unique<FullPriceStrategy>()));
+        hotel.addRoom(std::make_unique<Room>(2, 200, std::make_unique<DiscountPriceStrategy>(10)));*/
+
+        //hotel.addRoom(Room(2, 200, std::make_unique<DiscountPriceStrategy>(20)));
+
+        // Вычисляем среднюю стоимость
+        /*std::cout << "Средняя стоимость номера: " << hotel.calculateAverageCost() << std::endl;
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Ошибка: " << e.what() << std::endl;
+    }
+
+    return 0;
+}*/
+
+
+
+            switch (choice) {
+            case '1':
+                addRoomManually(hotel);
+                break;
+            case '2':
+                try {
+                    std::cout << "Средняя стоимость номера: " << hotel.calculateAverageCost() << std::endl;
+                }
+                catch (const std::exception& e) {
+                    std::cerr << "Ошибка: " << e.what() << std::endl;
+                }
+                break;
+            case '0':
+                std::cout << "Выход из программы.\n";
+                break;
+            default:
+                std::cerr << "Неверный выбор. Попробуйте снова.\n";
+            }
+        } while (choice != '0');
+    }
+    catch (const std::exception& e) {
+        std::cerr << "Ошибка: " << e.what() << std::endl;
+    }
+
+    return 0;
+}
