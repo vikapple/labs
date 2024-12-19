@@ -1,0 +1,370 @@
+#include <iostream>
+#include <string>
+#include <windows.h>
+#include <limits>
+#include <iomanip>
+#include <vector>
+#include <ios>
+#include <set>
+#include <conio.h>
+
+
+using namespace std;
+
+
+enum class roomPrice {};
+
+
+class Room
+{
+
+private:
+
+	int number;
+	string info;
+	double price;
+
+public:
+
+	Room(int number, string info, double price) : number(number), info(info), price(price) {}
+
+	void getRoomInfo()
+	{
+		cout << endl << "Комната №" << number << "; информация о комнате - " << info << "; стоимость проживания - " << fixed << setprecision(2) << price << " руб.";
+	}
+
+	int getNumber() { return number; }
+
+	string getInfo() { return info; }
+
+	double getPrice() { return price; }
+};
+
+
+class Client
+{
+
+private:
+
+	string name;
+	Room room;
+
+public:
+
+	Client(string name, Room room) : name(name), room(room) {}
+
+	void getClientInfo()
+	{
+		cout << "Клиент " << name << " занял комнату №" << room.getNumber() << " по стоимости " << fixed << setprecision(2) << room.getPrice() << " руб." << endl;
+	}
+
+	string getName() { return name; }
+};
+
+
+class Hotel
+{
+
+private:
+
+	vector<Client> clients;
+	vector<Room> rooms;
+	set<int> roomNumbers; //уникальные номера
+
+	Hotel() {}
+
+	~Hotel() {}
+
+public:
+
+	static Hotel& getInstance()
+	{
+		static Hotel instance;
+		return instance;
+	}
+
+	void addClient(string name, Room room)
+	{
+		clients.emplace_back(name, room);
+	}
+
+	bool addRoom(int number, string info, double price)
+	{
+		if (roomNumbers.find(number) != roomNumbers.end())
+		{
+			cout << "Ошибка: комната с номером " << number << " уже существует!" << endl;
+			return false;
+		}
+
+		rooms.emplace_back(number, info, price);
+		roomNumbers.insert(number); //добавляем в сет
+		return true;
+
+	}
+
+	//void addRoom(int number, string info, double price)
+	//{
+		//rooms.emplace_back(number, info, price);
+	//}
+
+	/*void removeRoom(int number)
+	{
+		auto iter = rooms.cbegin();
+		rooms.erase(iter + number - 1);
+	}*/
+
+	void removeRoom(int number)
+	{
+		for (auto it = rooms.begin(); it != rooms.end(); ++it)
+		{
+			if (it->getNumber() == number)
+			{
+				rooms.erase(it);
+				roomNumbers.erase(number); // Удаляем номер из set
+				return;
+			}
+		}
+
+		cout << "Ошибка: комната с номером " << number << " не найдена." << endl;
+	}
+
+	vector<Client> getClients()
+	{
+		return clients;
+	}
+
+	vector<Room> getRooms()
+	{
+		return rooms;
+	}
+};
+
+int main()
+{
+	SetConsoleCP(1251);
+	SetConsoleOutputCP(1251);
+
+	Hotel& hotel = Hotel::getInstance();
+
+	cout << "Информационная база гостиницы Azur$Beach." << endl << endl;
+
+	cout << "Меню для навигации:" << endl << endl;
+	cout << "1. Добавить номер, информацию о нем и его стоимость." << endl;
+	cout << "2. Добавить клиента." << endl;
+	cout << "3. Список незанятых номеров." << endl;
+	cout << "4. Список клиентов." << endl;
+	cout << "5. Поиск клиента по фамилии." << endl;
+	cout << "0. Выйти из программы." << endl << endl;
+
+	int input = -1;
+
+	while (input != 0)
+	{
+		input = _getch();
+
+		if (input == '1')
+		{
+			int number = 0;
+			string info;
+			double price = 0;
+			bool check = true;
+
+			while (number == 0)
+			{
+				cout << "Введите новый номер комнаты: ";
+				cin >> number;
+				number = abs(number);
+				if (cin.fail())
+				{
+					cin.clear();
+					cin.ignore(100, '\n');
+					check = false;
+				}
+				else
+					check = true;
+			}
+
+		/*	int i = 0;
+			for (auto& room : hotel.getRooms())
+			{
+				i++;
+				if (room.getNumber() == number)
+				{
+					hotel.removeRoom(i);
+					break;
+				}
+			}*/
+
+			cout << "Введите информацию о комнате: ";
+			/*while (info.empty())
+			{
+				getline(cin, info);
+			}*/
+			cin.ignore(); // Очистка буфера
+			getline(cin, info);
+
+
+			while (price <= 0 or check == false)
+			{
+				cout << "Введите стоимость комнаты: ";
+				cin >> price;
+				if (cin.fail())
+				{
+					cin.clear();
+					cin.ignore(100, '\n');
+					check = false;
+				}
+				else
+					check = true;
+			}
+
+			/*if (check == true)
+			{
+				cout << endl << "Комната №" << number << " была добавлена в информационную базу." << endl << endl;
+				hotel.addRoom(number, info, price);
+			}*/
+			if (check == true)
+			{
+				if (hotel.addRoom(number, info, price))
+				{
+					cout << endl << "Комната №" << number << " была добавлена в информационную базу." << endl << endl;
+				}
+			}
+		}
+
+
+		else if (input == '2')
+		{
+			string name;
+			int number;
+			bool check = true, checkRoom = true;
+
+
+			/*while (name.empty())
+			{
+				cout << "Введите фамилию клиента: ";
+				cin >> name;
+			}*/
+			cout << "Введите фамилию клиента: ";
+			cin >> name;
+
+			int i = 0;
+			for (auto& room : hotel.getRooms())
+				i++;
+
+			if (i == 0)
+				cout << "Отсутствуют свободные комнаты." << endl << endl;
+			else
+			{
+				cout << "Выберите номер комнаты: ";
+				for (auto& room : hotel.getRooms())
+					room.getRoomInfo();
+
+				cout << endl << "Номер комнаты: ";
+				cin >> number;
+
+				/*int i = 0;
+				Room selectedRoom(0, "", 0);
+				for (auto& room : hotel.getRooms())
+				{
+					i++;
+					if (room.getNumber() == number)
+					{
+						selectedRoom = room;
+						hotel.removeRoom(i);
+						break;
+					}
+				}*/
+				Room selectedRoom(0, "", 0);
+				for (auto& room : hotel.getRooms())
+				{
+					if (room.getNumber() == number)
+					{
+						selectedRoom = room;
+						hotel.removeRoom(number);
+						break;
+					}
+				}
+
+				if (selectedRoom.getNumber() <= 0)
+					checkRoom = false;
+
+				if (checkRoom == false)
+					cout << "Клиента зарегистрировать не удалось." << endl << endl;
+
+				if (check == true and checkRoom == true) {
+					hotel.addClient(name, selectedRoom);
+					cout << endl << "Клиент " << name << " заселен в комнату №" << selectedRoom.getNumber() << "." << endl << endl;
+				}
+			}
+		}
+
+
+		else if (input == '3')
+		{
+			int i = 0;
+
+			cout << "Список свободных комнат:" << endl;
+			for (auto& room : hotel.getRooms())
+			{
+				room.getRoomInfo();
+				i++;
+			}
+
+			if (i == 0)
+				cout << "Свободные комнаты отсутствуют." << endl << endl;
+			else
+				cout << endl << endl;
+		}
+
+
+		else if (input == '4')
+		{
+			int i = 0;
+
+			cout << "Список клиентов:" << endl;
+			for (auto& client : hotel.getClients())
+			{
+				client.getClientInfo();
+				i++;
+			}
+
+			if (i == 0)
+				cout << "Клиенты в базе отсутствуют." << endl << endl;
+			else
+				cout << endl;
+		}
+
+
+		else if (input == '5')
+		{
+			string name;
+
+			int i = 0;
+
+			cout << "Введите фамилию клиента: ";
+			cin >> name;
+
+			for (auto& client : hotel.getClients())
+			{
+				if (client.getName() == name)
+				{
+					client.getClientInfo();
+					i++;
+				}
+			}
+
+			if (i == 0)
+				cout << "Клиента с такой фамилией в базе не найдено." << endl << endl;
+		}
+
+
+		else if (input == '0')
+		{
+			cout << "До свидания!" << endl;
+			return 0;
+		}
+	}
+
+	return 0;
+}
